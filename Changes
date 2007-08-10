@@ -1,0 +1,6 @@
+Revision history for Perl extension K.
+
+0.01  Fri May  4 21:12:04 2007
+	- original version; created by h2xs 1.23 with options
+		-n K --skip-autoloader -O -x -d -b 5.8.0 k.h
+
