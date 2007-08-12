@@ -1,5 +1,6 @@
 Changes
 Kx.xs
+k.h
 Makefile.PL
 MANIFEST
 ppport.h

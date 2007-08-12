@@ -4,7 +4,7 @@
 
 #include "ppport.h"
 
-#include "../k.h"
+#include "./k.h"
 
 typedef struct k0 Kstruct;
 

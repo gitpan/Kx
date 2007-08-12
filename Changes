@@ -1,6 +1,8 @@
-Revision history for Perl extension K.
+Revision history for Perl extension Kx.
 
 0.01  Fri May  4 21:12:04 2007
 	- original version; created by h2xs 1.23 with options
-		-n K --skip-autoloader -O -x -d -b 5.8.0 k.h
+		-n Kx --skip-autoloader -O -x -d -b 5.8.0 k.h
+0.02 Sun Aug 12 16:29:06 EST 2007
+	- Missing k.h in tar file added
 
