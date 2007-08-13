@@ -8,7 +8,7 @@ use POSIX ();
 
 my $DEBUG = 0;
 
-$Kx::VERSION = '0.02';
+$Kx::VERSION = '0.03';
 
 my %NULL = (
 	'symbol' => '`',
@@ -816,7 +816,8 @@ sub Tmeta
 	my $self = shift;
 	my $table = shift;
 
-	my $q    = "select c,t from meta $table";
+	#my $q    = "select c,t from meta $table";
+	my $q    = "meta $table";
 	my $meta = kTable($self->{'kdb'},$q);
 	return undef if $meta == 0;
 	if(kType($meta) < 0)
@@ -829,7 +830,12 @@ sub Tmeta
 	my @m = ();
 	for(my $i=0; $i < $rows; $i++)
 	{
-		push(@m,[kTableIndex($meta,$i,0), chr(kTableIndex($meta,$i,1))]);
+		my $type = kTableIndex($meta,$i,1);  # Version 2.2 support
+		if($type =~ /^\d+/)
+		{
+			$type = chr($type);
+		}
+		push(@m,[kTableIndex($meta,$i,0), $type]);
 	}
 	dor0($meta);
 

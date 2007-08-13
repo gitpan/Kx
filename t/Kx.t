@@ -215,7 +215,9 @@ ok($k->Tget('a'), 'Tget a');
 is($k->Tindex(3,2), 8, 'Tindex a');
 is($k->Theader()->[1], 'k', 'Theader a');
 is($k->Tcol(1)->[20],2, 'Tcol a');
-is(($k->Tmeta('a'))[0]->[1], 'z', 'Tmeta a');
+$type = ($k->Tmeta('a'))[0]->[1];
+$type = 'z' if  $type eq 'datetime';
+is($type, 'z', 'Tmeta a');
 
 # Check cmd()
 $x = $k->cmd('count a');
