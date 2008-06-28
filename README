@@ -9,7 +9,7 @@ INSTALLATION
 
 first get a copy of c.o from kx.com for your architecture
 make libkdb.a from c.o for easy linking
-	ar -r libkdb c.o
+	ar -r libkdb.a c.o
 or
 	libtool -static -o libkdb.a c.o
 

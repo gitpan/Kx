@@ -329,7 +329,7 @@ k2parray (Kstruct * x)
 
 	if(typ < 0)
 	{
-		warn("Kx::k2parray arg is not right type >=0 instead got %i\n",typ);
+		warn("Kx::k2parray arg is not right type got %i\n",typ);
 		return av; // bail out as its a scalar
 	}
 
@@ -408,22 +408,30 @@ HV*
 k2phash (Kstruct *tb)
 {
 	K x, tmp;
-	int iamtable = 1;
+	int releaseX = 0;  // do we need to release mem
+
 	// warn("In khash\n");
 
-	if(tb->t == 99) // Dict or table with keys
+	if(tb->t == 99 && (kK(tb)[0])->t == 98 && (kK(tb)[1])->t == 98) // Keyed Table
 	{
-		// A Dict will fail on this call
+		// Convert keyed table to an unkeyed version, then to dict
+		r1(tb);
 		tmp = ktd(tb);
-		if(tmp) 
+		if(tmp != 0) 
 		{ 
-			x = tmp->k;   // flip from keyed table, dict from flip
+			x = tmp->k;   // dict from table, tb has been deallocated
+			releaseX=1;   // x is a merged copy of tb that needs r0
 		}
 		else
 		{
-			x = tb;
-			iamtable = 0;
+			warn("Failed to convert Keyed table to normal table\n");
+			r0(tb);
+			return newHV();
 		}
+	}
+	else if(tb->t == 99) // Dict
+	{
+		x = tb;
 	}
 	else if (tb->t == 98) // Normal Table
 	{
@@ -434,6 +442,7 @@ k2phash (Kstruct *tb)
 		myerr("Kx::k2phash wrong type");
 		return newHV();
 	}
+
 
 	// Ok we now are sure we have dict to play with
 	HV *hv = newHV();
@@ -532,6 +541,9 @@ k2phash (Kstruct *tb)
 		}
 	}
 	// warn("Out khash\n\n");
+
+	if(releaseX)
+		r0(tmp);
 	return hv;
 }
 
@@ -715,7 +727,7 @@ parray2k(AV * av)
 	}
 
 	// OK now we know what sort of K list to create
-	if(mixed)
+	if(mixed || typ == SVt_RV)
 	{
 		K kv = ktn(0,len+1);
 		for(i=0; i <= len; i++)
@@ -800,7 +812,7 @@ parray2k(AV * av)
 		}
 		else
 		{
-			warn("Kx::parry2k unknown type\n");
+			warn("Kx::parry2k unknown type %i\n",typ);
 			return (K)0;
 		}
 		return kv;

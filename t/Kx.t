@@ -5,8 +5,8 @@
 
 # change 'tests => 2' to 'tests => last_test_to_print';
 
-#use Test::More tests => 43;
-use Test::More qw(no_plan);
+use Test::More tests => 71;
+#use Test::More qw(no_plan);
 use Data::Dumper;
 BEGIN { use_ok('Kx') };
 
@@ -39,7 +39,7 @@ ok(defined $rv, 'Connect');
 die "Can't connect to KDB+ " unless $rv;
 
 # Big bang test straight up, Stuff a hash of interetsing stuff into Kdb+
-# and get it back for comparision, re stuff it then compare it in Kdb+
+# and get it back for comparision, restuff it then compare it in Kdb+
 # and get the result back. Then test to see its OK
 %p = (
 	'192.168.1.200' => ['Changes', 'K-0.01.tar.gz', 'K.bs'],
@@ -75,6 +75,26 @@ is($r->{'accessors-xs.inc'},1, "accessors-xs.inc");
 is($r->{'K.c'}[0]{'K.o'},1, "K.c[0]{K.o}");
 is($r->{'K.c'}[1]{'MANIFEST'},1, "K.c[1]{MANIFEST}");
 is($r->{'K.c'}[2],1, "K.c[2]");
+
+#q)aa 
+#st1      | ,0j        0 1j       0 1 2j     0 1 2 3j   0 1 2 3 4j 0 1 2 3 4 5..
+#interface| interface0 interface1 interface2 interface3 interface4 interface5 ..
+#st2      | ,0j        0 1j       0 1 2j     0 1 2 3j   0 1 2 3 4j 0 1 2 3 4 5..
+$x = {
+	"interface" => [ map {"interface$_"} 0..20],
+	"st1"       => [ map {[0..$_]} 0..20],
+	"st2"       => [ map {[0..$_]} 0..20],
+};
+$kz = $k->perl2k($x);
+$k->cmd('{aa::x}',$kz->kval);
+$a = $k->cmd('aa');
+is($a->{st1}[4][4], $x->{st1}[4][4], "Dict of arrays");
+
+# Try a keyed table, selected many times
+$k->cmd('l: ([a:1 2 3] b:4 5 6)');
+$a = $k->cmd('l') for(0..100);
+$b = $k->cmd('select from l') for(0..100);
+is($a->{a}[2], $b->{a}[2], "keyed table elements the same");
 
 # 
 # Create Atoms

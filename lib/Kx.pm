@@ -8,7 +8,7 @@ use POSIX ();
 
 my $DEBUG = 0;
 
-$Kx::VERSION = '0.03';
+$Kx::VERSION = '0.031';
 
 my %NULL = (
 	'symbol' => '`',
@@ -402,6 +402,10 @@ You may have run a number of Tselects() and now wish to pull back the
 data. To do this use Tget()
 
     $k->Tget('table');   # table must be a table in the server
+
+Tget() can also be used with select type queries that return a table as
+their result. It also handles indexed tables better than the cmd()
+method.
 
 To get access to random values in the returned table from Tget().
 
@@ -902,6 +906,14 @@ returns a list. It will return a simple scalar if the result is a scalar
 response from Q. It will return a hash reference if the return result
 from Q is either  table/keyed table/dictionary. You need to know what you
 are doing so can know what the result is (or use Perl's ref()).
+
+Do not execute queries that return large 'keyed' tables as a copy of the table
+in unkeyed form is held to convert to a Perl Hash before being freed.
+
+Note: cmd() does not convert a keyed table to an unkeyed table in memory.
+It holds onto what was passed back from KDB+ as is. If you want get at
+the underlying K structure and change it use Tget() instead. Tget() will
+convert a keyed table to an unkeyed table and hold it in memory.
 
 If you have a Q script that you wish to run against the Kdb+ server you
 can use the do(file) method. Any error in your script that is caught will

@@ -5,13 +5,13 @@ use ExtUtils::MakeMaker;
 unless(-f 'libkdb.a')
 {
 	print 
-"I can't see a libkdb.
+"I can't see a libkdb.a
 You need to download c.o from http://kx.com/q/ and build a library I can
 use (libkdb.a). Once you have that rerun perl Makefile.PL
 
 To build a library try something like this.
 
-        ar -r libkdb c.o
+        ar -r libkdb.a c.o
 or
         libtool -static -o libkdb.a c.o
 
