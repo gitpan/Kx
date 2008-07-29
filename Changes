@@ -8,5 +8,10 @@ Revision history for Perl extension Kx.
 0.03 Mon Aug 13 02:48:53 UTC 2007
 	- Tmeta test failed under KDB+ 2.2 2005.08.17 as "meta" is different
 	  under different q versions
-0.04 Thu Aug 16 14:17:50 EST 2007
-	- Now handle Perl arrays of refs to thing
+0.031
+	- Better handling of keyed tables
+0.032 Tue Jul 29 10:46:59 EST 2008
+	- memory leak in $k->val() cause by inappropriate use of 
+	SV* newRV_inc((SV*) thing);
+	- There is a still a small leak in $k->Tget() and possibly $k->cmd()
+	  to confirm, seek and destroy

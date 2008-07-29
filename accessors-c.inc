@@ -147,7 +147,7 @@ Ktd (Kstruct * x) {
 /* accessor for a table select */
 Kstruct *
 kTable (int c, char * cmd) {
-	K x,y,vals,keys;
+	K x,y,tmp,keys;
 
 	// run command and return a result, New k object created
 	x = k(c,cmd,0);
@@ -166,9 +166,10 @@ kTable (int c, char * cmd) {
 		return(x); 
 	}
 
-	// Assert(!(x=ktd(x)),"type")
-	x=ktd(x);
-	if( x == 0 ) { myerr("Kx::kTable ktd() type failure\n"); return(x); }
+	// Assert(!(t=ktd(x)),"type")
+	tmp=ktd(x);
+	if( tmp == 0 ) { myerr("Kx::kTable ktd() type failure\n"); return(x); }
+	x = tmp;  // x was deallocated in ktd
 
 	y = x->k;   // dict from flip above.
 	if( !(y->t == 99) ) 
@@ -348,12 +349,12 @@ k2parray (Kstruct * x)
 			if(atom->t == XT || atom->t == XD)
 			{
 				// a table/dict
-				av_push(av, newRV_inc((SV*) k2phash(atom)));
+				av_push(av, newRV_noinc((SV*) k2phash(atom)));
 			}
 			else if(atom->t >= 0)
 			{
 				// another vector, so recurse
-				av_push(av, newRV_inc((SV*) k2parray(atom)));
+				av_push(av, newRV_noinc((SV*) k2parray(atom)));
 			}
 			else
 			{
@@ -385,8 +386,8 @@ k2parray (Kstruct * x)
 			  CS(KU, DOAV(x->n,av,newSViv(kI(x)[i])))
 			  CS(KV, DOAV(x->n,av,newSViv(kI(x)[i])))
 			  CS(KT, DOAV(x->n,av,newSViv(kI(x)[i])))
-			  CS(XT, av_push(av, newRV_inc((SV*)k2phash(x))))
-			  CS(XD, av_push(av, newRV_inc((SV*)k2phash(x))))
+			  CS(XT, av_push(av, newRV_noinc((SV*)k2phash(x))))
+			  CS(XD, av_push(av, newRV_noinc((SV*)k2phash(x))))
 			  // CD: warn("Null Array type=%i\n",typ);return av; // undef
 			  CD: return av; // undef
 		};
@@ -510,21 +511,21 @@ k2phash (Kstruct *tb)
 						// if(typ == SVt_PVAV || typ == SVt_PVHV) // array or hash
 						if(typ == SVt_PVHV) // array or hash
 						{
-							sv = newRV_inc((SV*) SvRV(*test));
+							sv = newRV_noinc((SV*) SvRV(*test));
 						}
 						else 
 						{
-							sv = newRV_inc((SV*) av);
+							sv = newRV_noinc((SV*) av);
 						}
 					}
 					else // Not a reference do normal stuff
 					{
-						sv = newRV_inc((SV*) av);
+						sv = newRV_noinc((SV*) av);
 					}
 				}
 				else // Normal stuff
 				{
-					sv = newRV_inc((SV*) av);
+					sv = newRV_noinc((SV*) av);
 				}
 			}
 		}
@@ -566,11 +567,11 @@ k2p (Kstruct * k)
 	}
 	else if (k->t == XD || k->t == XT) // dict/table with prim key or table
 	{
-		return newRV_inc((SV*) k2phash(k));
+		return newRV_noinc((SV*) k2phash(k));
 	}
 	else if (k->t >= 0 && k->t <= KT) // mixed => time
 	{
-		return newRV_inc((SV*) k2parray(k));
+		return newRV_noinc((SV*) k2parray(k));
 	}
 	else
 	{
