@@ -8,7 +8,7 @@ use POSIX ();
 
 my $DEBUG = 0;
 
-$Kx::VERSION = '0.034';
+$Kx::VERSION = '0.035';
 
 my %NULL = (
 	'symbol' => '`',
@@ -2218,7 +2218,14 @@ sub STORE
 	{
 		$key = $CAST{$ktype} . $key;
 	}
-	$val = $CAST{$vtype} . $val;
+	if($vtype eq "symbol")
+	{
+		$val = '`$"'.$val.'"';
+	}
+	else
+	{
+		$val = $CAST{$vtype} . $val;
+	}
 	my $r = Kx::k($self->{'kdb'},"$dict"."[$key]:$val");
 	Kx::dor0($r);
 	return;

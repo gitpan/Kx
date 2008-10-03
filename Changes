@@ -15,3 +15,7 @@ Revision history for Perl extension Kx.
 	SV* newRV_inc((SV*) thing);
 	- There is a still a small leak in $k->Tget() and possibly $k->cmd()
 	  to confirm, seek and destroy
+0.034 Fri Oct  3 2008
+	- further memory leak in k2phash() removed
+0.035 Fri Oct  3 21:47:42 EST 2008
+	- STORE in tie hash now does the right thing with values
