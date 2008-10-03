@@ -139,12 +139,12 @@ Kstruct *
 knk(...)
   PREINIT:
 	Kstruct *a[7];
+	int i = 0;
   CODE:
 	if(items > 8)
 		croak("Kx::knk() can handle only upto 8 arguments");
 	if(items < 1)
 		croak("Kx::knk() needs at least one argument");
-	int i = 0;
 	for(;i < items; i++)
 	{
             IV tmp = SvIV((SV*)SvRV(ST(i)));

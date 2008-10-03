@@ -206,10 +206,11 @@ kTableCols (Kstruct * x) {
 
 int
 kTableNumRows (Kstruct * x) {
+	K y;
 	K keys=kK(x->k)[0];
 	K vals=kK(x->k)[1];
 	Assert(!(keys->t == KS),"kTableNumRows Keys should be an array of symbols")
-	K y = kK(vals)[0];
+	y = kK(vals)[0];
 	return(y->n);
 };
 
@@ -226,12 +227,14 @@ kTableNumCols (Kstruct * x) {
 SV * k2p (Kstruct * );
 SV *
 kTableIndex (Kstruct * x, int row, int col) {
+	K chdr;
+	H ctyp;
 	K keys=kK(x->k)[0];
 	K vals=kK(x->k)[1];
 	Assert(!(keys->t == KS),"Keys should be an array of symbols")
 
-	K chdr = kK(vals)[col];   // the head of this column
-	H ctyp = chdr->t;         // this columns type
+	chdr = kK(vals)[col];   // the head of this column
+	ctyp = chdr->t;         // this columns type
 	if(ctyp > 0 )
 	{
 		switch(ctyp)
@@ -409,6 +412,14 @@ HV*
 k2phash (Kstruct *tb)
 {
 	K x, tmp;
+	SV *sv;
+	SV **skey;
+	SV **test;
+	AV *av, *keys;
+	I32 len;
+	int cols, i;
+	HV *hv = newHV();
+
 	int releaseX = 0;  // do we need to release mem
 
 	// warn("In khash\n");
@@ -427,7 +438,7 @@ k2phash (Kstruct *tb)
 		{
 			warn("Failed to convert Keyed table to normal table\n");
 			r0(tb);
-			return newHV();
+			return hv;
 		}
 	}
 	else if(tb->t == 99) // Dict
@@ -441,25 +452,20 @@ k2phash (Kstruct *tb)
 	else
 	{
 		myerr("Kx::k2phash wrong type");
-		return newHV();
+		return hv;
 	}
 
 
 	// Ok we now are sure we have dict to play with
-	HV *hv = newHV();
-	SV *sv;
-	SV **skey;
-	AV *av;
 
 	// Loop through each column list and assign that vector (*AV) to the
 	// appropriate key (column name)
 	// $a = { 'col1' => [1,2,3,4], 'col2' => [0,8,7,6] } effectively
 
-	AV *keys   = k2parray(xx);
+	keys   = k2parray(xx);
 
-	int cols = xx->n;       // number of columns
-	int i = 0;
-	for(;i<cols;i++)
+	cols = xx->n;       // number of columns
+	for(i=0;i<cols;i++)
 	{
 		// Get a scalar to store from the list
 		if(xy->t > 0 && xy->t < XT)
@@ -499,11 +505,11 @@ k2phash (Kstruct *tb)
 
 				// Now is this vector a singleton array holding a perl Hash data
 				// structure. If so promote it.
-				I32 len = av_len(av);  // get its last index value
+				len = av_len(av);  // get its last index value
 				if(len== 0)
 				{
 					// Get at the value so we can test it
-					SV **test = av_fetch(av,0,0);
+					test = av_fetch(av,0,0);
 					if(SvROK(*test))  // its a reference
 					{
 						int typ = SvTYPE(SvRV(*test));
@@ -511,7 +517,8 @@ k2phash (Kstruct *tb)
 						// if(typ == SVt_PVAV || typ == SVt_PVHV) // array or hash
 						if(typ == SVt_PVHV) // array or hash
 						{
-							sv = newRV_noinc((SV*) SvRV(*test));
+							sv = newRV_inc((SV*) SvRV(*test));
+							av_undef(av); // av not required anymore
 						}
 						else 
 						{
@@ -545,6 +552,8 @@ k2phash (Kstruct *tb)
 
 	if(releaseX)
 		r0(tmp);
+	
+	av_undef(keys); // get rid of keys array as they are in the hash proper
 	return hv;
 }
 
@@ -624,13 +633,14 @@ K
 p2k(SV * ref)
 {
 	K kv;
+	int typ;
 
 	if(!SvROK(ref))
 	{
 		warn("Kx::p2k(perl_ref) has have a perl reference\n");
 		return (K)0;
 	}
-	int typ = SvTYPE(SvRV(ref));
+	typ = SvTYPE(SvRV(ref));
 
 	if(SCALAR(typ))
 	{
@@ -698,6 +708,9 @@ K
 parray2k(AV * av)
 {
 	K k;
+	int mixed, typ;
+	I32 i;
+	SV** svp;
 
 	I32 len = av_len(av);  // get its last index value
 	if(len == -1)
@@ -713,10 +726,10 @@ parray2k(AV * av)
 	* list option. This is slower but uses less memory than building as
 	* we go and assuming it is a simple list
 	*/
-	I32 i = 0;
-	int mixed = 0;
-	SV** svp = av_fetch(av,0,0);  // get 1st val so can find type
-	int typ = SvTYPE(*svp);
+	i = 0;
+	mixed = 0;
+	svp = av_fetch(av,0,0);  // get 1st val so can find type
+	typ = SvTYPE(*svp);
 	for(i=1; i <= len; i++)
 	{
 		svp = av_fetch(av,i,0);
@@ -823,7 +836,7 @@ parray2k(AV * av)
 K
 phash2k(HV * h)
 {
-	int i;
+	int i, typ;
 	SV * sv;
 	char * key;
 	I32 keylen;
@@ -837,7 +850,7 @@ phash2k(HV * h)
 
 		// Store em in the Dict
 		kS(xx)[i] = sn((unsigned char *)key, keylen);
-		int typ = SvTYPE(sv);
+		typ = SvTYPE(sv);
 
 		// If we have a reference then we need to dereference it
 		while(typ == SVt_RV)
@@ -875,12 +888,14 @@ phash2k(HV * h)
 K
 newKarray(int typ, AV * arref)
 {
-	int len = av_len(arref);
-	len++;
-	K list = ktn(typ,len);
-
+	K list;
 	int i;   // needed for NEWKDO
 	SV* sv;  // needed for NEWKDO
+
+
+	int len = av_len(arref);
+	len++;
+	list = ktn(typ,len);
 
 	switch(typ)
 	{
@@ -964,6 +979,7 @@ setKarraybinary(K list, int x, SV * val)
 {
 	STRLEN len;
 	char * ptr;
+	int i;
 	ptr = SvPV(val, len);
 
 	if(x < 0)
@@ -974,7 +990,6 @@ setKarraybinary(K list, int x, SV * val)
 	if(x+len > list->n) { myerr("x+len too big"); return 0; }
 	if(list->t != KG) { myerr("Not a byte list"); return 0; }
 
-	int i;
 	for(i=0; i < len; i++)
 	{
 		kG(list)[i+x] = *(ptr+i);
