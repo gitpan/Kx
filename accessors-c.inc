@@ -285,7 +285,6 @@ k2pscalar (Kstruct * x) {
 	// The type should be negative for an atom.
 	H typ = x->t;       // this objects type
 
-	SV *sv = newSV(0);
 	if(typ >= 0)
 	{
 		return k2p(x);   // bail out, let k2p handle it
@@ -310,7 +309,7 @@ k2pscalar (Kstruct * x) {
 		  CS(KU,return newSViv(x->i))
 		  CS(KV,return newSViv(x->i))
 		  CS(KT,return newSViv(x->i))
-		  CD: return sv;
+		  CD: return newSV(0);
 	};
 };
 
@@ -328,6 +327,8 @@ HV* k2phash (Kstruct *x);
 AV *
 k2parray (Kstruct * x) 
 {
+	AV *av1;
+	HV *hv;
 	H typ = x->t;       // this arrays type
 	AV *av = newAV();
 
@@ -352,18 +353,21 @@ k2parray (Kstruct * x)
 			if(atom->t == XT || atom->t == XD)
 			{
 				// a table/dict
-				av_push(av, newRV_noinc((SV*) k2phash(atom)));
+				hv = k2phash(atom);
+				av_push(av, newRV_noinc((SV*) hv));
 			}
 			else if(atom->t >= 0)
 			{
 				// another vector, so recurse
-				av_push(av, newRV_noinc((SV*) k2parray(atom)));
+				av1 = k2parray(atom);
+				av_push(av, newRV_noinc((SV*) av1));
 			}
 			else
 			{
 				av_push(av, k2pscalar(atom));
 			}
 		}
+		// warn("    Out k2parray doing type = %i, num = %i\n\n",typ,x->n);
 		return av;
 	}
 	else
@@ -372,6 +376,7 @@ k2parray (Kstruct * x)
 		 * done within each case statement. KG (bytes) and KC (chars) are
 		 * converted into a single string.
 		 */
+		 HV *hv;
 		switch(typ)
 		{
 			  CS(KB, DOAV(x->n,av,newSViv(kG(x)[i])))
@@ -389,8 +394,8 @@ k2parray (Kstruct * x)
 			  CS(KU, DOAV(x->n,av,newSViv(kI(x)[i])))
 			  CS(KV, DOAV(x->n,av,newSViv(kI(x)[i])))
 			  CS(KT, DOAV(x->n,av,newSViv(kI(x)[i])))
-			  CS(XT, av_push(av, newRV_noinc((SV*)k2phash(x))))
-			  CS(XD, av_push(av, newRV_noinc((SV*)k2phash(x))))
+			  CS(XT, hv = k2phash(x); av_push(av, newRV_noinc((SV*) hv)))
+			  CS(XD, hv = k2phash(x); av_push(av, newRV_noinc((SV*) hv)))
 			  // CD: warn("Null Array type=%i\n",typ);return av; // undef
 			  CD: return av; // undef
 		};
@@ -517,7 +522,7 @@ k2phash (Kstruct *tb)
 						// if(typ == SVt_PVAV || typ == SVt_PVHV) // array or hash
 						if(typ == SVt_PVHV) // array or hash
 						{
-							sv = newRV_inc((SV*) SvRV(*test));
+							sv = newRV_inc((SV*) SvRV(*test)); // hmm inc
 							av_undef(av); // av not required anymore
 						}
 						else 
@@ -554,6 +559,7 @@ k2phash (Kstruct *tb)
 		r0(tmp);
 	
 	av_undef(keys); // get rid of keys array as they are in the hash proper
+
 	return hv;
 }
 
@@ -570,17 +576,25 @@ k2phash0 (Kstruct * x)
 SV* 
 k2p (Kstruct * k)
 {
+	SV* rtn;
+	AV* av;
+	HV* hv;
+
 	if(k->t < 0)  // scalar
 	{
 		return k2pscalar(k);
 	}
 	else if (k->t == XD || k->t == XT) // dict/table with prim key or table
 	{
-		return newRV_noinc((SV*) k2phash(k));
+		hv = k2phash(k);
+		rtn = newRV_noinc((SV*) hv);
+		return rtn;
 	}
 	else if (k->t >= 0 && k->t <= KT) // mixed => time
 	{
-		return newRV_noinc((SV*) k2parray(k));
+		av = k2parray(k);
+		rtn = newRV_noinc((SV*) av);
+		return rtn;
 	}
 	else
 	{

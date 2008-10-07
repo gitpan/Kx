@@ -94,18 +94,38 @@ k2pscalar (x)
 AV *
 k2parray0(x)
 	Kstruct * x
+	CODE:
+		RETVAL = k2parray0(x);
+		sv_2mortal((SV*)RETVAL);
+	OUTPUT:
+		RETVAL
 
 AV *
 k2parray(x)
 	Kstruct * x
+	CODE:
+		RETVAL = k2parray(x);
+		sv_2mortal((SV*)RETVAL);
+	OUTPUT:
+		RETVAL
 
 HV *
 k2phash(x)
 	Kstruct * x
+	CODE:
+		RETVAL = k2phash(x);
+		sv_2mortal((SV*)RETVAL);
+	OUTPUT:
+		RETVAL
 
 HV *
 k2phash0(x)
 	Kstruct * x
+	CODE:
+		RETVAL = k2phash0(x);
+		sv_2mortal((SV*)RETVAL);
+	OUTPUT:
+		RETVAL
 
 int
 Z2epoch(datetime)

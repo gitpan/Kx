@@ -19,3 +19,9 @@ Revision history for Perl extension Kx.
 	- further memory leak in k2phash() removed
 0.035 Fri Oct  3 21:47:42 EST 2008
 	- STORE in tie hash now does the right thing with values
+0.036 Tue Oct  7 21:29:43 EST 2008
+	- needed to reread perlguts and perlxs regarding mortals/AV*/HV*
+	- needed to create references in two C statements not directly from
+	  the return of a function call.
+	- Most leaks gone. There is still a very small one in k2p()/k2phash()
+

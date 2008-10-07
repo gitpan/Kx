@@ -8,7 +8,7 @@ use POSIX ();
 
 my $DEBUG = 0;
 
-$Kx::VERSION = '0.035';
+$Kx::VERSION = '0.036';
 
 my %NULL = (
 	'symbol' => '`',
@@ -442,6 +442,12 @@ exactly what you want first. The column reference above is a Perl copy of
 the data structure held in Kdb+ memory format in the client. This can be
 over 3 times larger in core than the Kdb+ data.
 
+If you need to access data via rows then use $k->Trow(). Given a row
+number it will return a reference to the row. The first row is at zero 0.
+
+    my $row = $k->Trow(0);   # get the zeroth row
+    print "Row 0 data is: @$row\n";
+
 Finally to delete or remove a table by name from the server:
 
     $k->Tdelete('table');
@@ -453,7 +459,8 @@ Here is a list of the complete table methods we have so far:
     $k->Tbulkinsert('table',col1=>[],col2=>[],...);
     $k->Tget('select statement');
     $scalar = $k->Tindex($row,$col);
-    $arref  = $k->Tcol(2);
+    $arref  = $k->Tcol(2);      # 3rd col vector
+    $arref  = $k->Trow(2);      # 3rd row
     $arref  = $k->Theader;
     $x      = $k->Tnumrows;
     $y      = $k->Tnumcols;
@@ -869,6 +876,25 @@ sub Tindex
 	return undef unless $row >= 0 && $row < $self->{'NUMROWS'};
 
 	return kTableIndex($self->{'K'},$row,$column);
+}
+
+sub Trow
+{
+	my $self = shift;
+	my $row = shift;
+
+	return undef unless defined $self->{'K'};
+	return undef unless defined $self->{'COLS'};
+	return undef unless $row >= 0 && $row < $self->{'NUMROWS'};
+
+	my @rtn = ();
+	my $colidx = $self->{'NUMCOLS'} -1;
+	for my $col (0..$colidx)
+	{
+		push(@rtn, kTableIndex($self->{'K'},$row,$colidx));
+	}
+
+	return \@rtn;
 }
 
 sub Theader
