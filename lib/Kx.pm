@@ -8,7 +8,7 @@ use POSIX ();
 
 my $DEBUG = 0;
 
-$Kx::VERSION = '0.036';
+$Kx::VERSION = '0.037';
 
 my %NULL = (
 	'symbol' => '`',
@@ -891,7 +891,7 @@ sub Trow
 	my $colidx = $self->{'NUMCOLS'} -1;
 	for my $col (0..$colidx)
 	{
-		push(@rtn, kTableIndex($self->{'K'},$row,$colidx));
+		push(@rtn, kTableIndex($self->{'K'},$row,$col));
 	}
 
 	return \@rtn;
