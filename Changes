@@ -24,4 +24,6 @@ Revision history for Perl extension Kx.
 	- needed to create references in two C statements not directly from
 	  the return of a function call.
 	- Most leaks gone. There is still a very small one in k2p()/k2phash()
+0.038 Sat 28 Feb 2009 22:18:14 EST
+	- added usernames, password support
 

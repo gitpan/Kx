@@ -23,6 +23,12 @@ khp(host,port)
 	char * host
 	int   port
 
+int
+khpu(host,port,userpass)
+	char * host
+	int   port
+	char * userpass
+
 Kstruct *
 k(dbi,command)
 	int  dbi

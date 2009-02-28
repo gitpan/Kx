@@ -8,7 +8,7 @@ use POSIX ();
 
 my $DEBUG = 0;
 
-$Kx::VERSION = '0.037';
+$Kx::VERSION = '0.038';
 
 my %NULL = (
 	'symbol' => '`',
@@ -110,6 +110,14 @@ will use the same connection without further connect() calls required.
     # will use it as well.
     $k1 = new K;
 
+Also username and passwords are supported. Just add the userpass
+attribute thus:
+
+    $k = Kx->new(name=>'local22', 
+	             host=>'localhost', 
+                 port=>2222,
+                 userpass=>'user:pass');
+
 =cut
 
 # we use %DB to hold all our connection details.
@@ -130,6 +138,10 @@ sub new
 	if(defined $opts{'port'})
 	{
 		$DB{$name}{'port'} = $opts{'port'};
+	}
+	if(defined $opts{'userpass'})
+	{
+		$DB{$name}{'userpass'} = $opts{'userpass'};
 	}
 	if(defined $opts{'check_for_errors'})
 	{
@@ -172,7 +184,18 @@ sub connect
 	if(!defined $DB{$name}{'kdb'})
 	{
 		# Create a new connection
-		$DB{$name}{'kdb'} = khp($DB{$name}{'host'}, $DB{$name}{'port'});
+		# host, port and username password details
+		if(defined $DB{$name}{'userpass'})
+		{
+			$DB{$name}{'kdb'} = khpu($DB{$name}{'host'}, 
+										$DB{$name}{'port'},
+										$DB{$name}{'userpass'});
+		}
+		# host, port only
+		else
+		{
+			$DB{$name}{'kdb'} = khp($DB{$name}{'host'}, $DB{$name}{'port'});
+		}
 		unless($DB{$name}{'kdb'} > 0)
 		{
 			carp "Kx->connect failed to connect. ". &whowasi ."\n" if $DEBUG;
@@ -1665,6 +1688,7 @@ that as well. Try something like this:
     my %config = (
         host=>"localhost",
         port=>2222,
+        userpass=>'user:pass',    # optional
         type=>'symbol',
         list=>'d',
         create=>1
@@ -1738,7 +1762,17 @@ sub TIEARRAY
 	}
 	else # get connected a new
 	{
-		$ref->{'kdb'} = Kx::khp($DB{$name}{'host'}, $DB{$name}{'port'});
+		if(defined $DB{$name}{'userpass'})
+		{
+			$ref->{'kdb'} = Kx::khpu($DB{$name}{'host'}, 
+										$DB{$name}{'port'},
+										$DB{$name}{'userpass'});
+		}
+		# host, port only
+		else
+		{
+			$ref->{'kdb'} = Kx::khp($DB{$name}{'host'}, $DB{$name}{'port'});
+		}
 		unless($ref->{'kdb'} > 0)
 		{
 			undef $ref->{'kdb'};
@@ -2080,6 +2114,7 @@ that as well. Try something like this:
     my %config = (
             host=>"localhost",
             port=>2222,
+            userpass=>'user:pass', # optional
             ktype=>'symbol',
             vtype=>'int',
             dict=>'x',
@@ -2175,7 +2210,17 @@ sub TIEHASH
 	}
 	else # get connected a new
 	{
-		$ref->{'kdb'} = Kx::khp($DB{$name}{'host'}, $DB{$name}{'port'});
+		if(defined $DB{$name}{'userpass'})
+		{
+			$ref->{'kdb'} = Kx::khpu($DB{$name}{'host'}, 
+										$DB{$name}{'port'},
+										$DB{$name}{'userpass'});
+		}
+		# host, port only
+		else
+		{
+			$ref->{'kdb'} = Kx::khp($DB{$name}{'host'}, $DB{$name}{'port'});
+		}
 		unless($ref->{'kdb'} > 0)
 		{
 			undef $ref->{'kdb'};

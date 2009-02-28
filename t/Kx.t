@@ -31,6 +31,7 @@ ok( $fail == 0 , 'Constants' );
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 #my $k = new Kx(host=>"localhost", port=>2080);
+#my $k = new Kx(host=>"localhost", port=>2222, 'userpass' => 'markpf:letmein', check_for_errors=>1);
 my $k = new Kx(host=>"localhost", port=>2222, check_for_errors=>1);
 ok( defined $k, 'New');
 
