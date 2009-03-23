@@ -26,4 +26,5 @@ Revision history for Perl extension Kx.
 	- Most leaks gone. There is still a very small one in k2p()/k2phash()
 0.038 Sat 28 Feb 2009 22:18:14 EST
 	- added usernames, password support
-
+0.039 Tue 24 Mar 2009 09:23:10 EST
+	- added better datetime support Kx::__Z2epoch()

@@ -8,7 +8,7 @@ use POSIX ();
 
 my $DEBUG = 0;
 
-$Kx::VERSION = '0.038';
+$Kx::VERSION = '0.039';
 
 my %NULL = (
 	'symbol' => '`',
@@ -1103,6 +1103,21 @@ retuned from a date() call it is in epoch seconds.
     $k = new K;
     my $date = $k->date(2007,4,22);
     print scalar localtime($date->val),"\n";
+
+Further more KDB+ Datetimes are held as a C double in memory. The
+integral part is the number of days since 1/1/2000 and the fractional
+part is the fraction of the day. You have some control over how datetimes
+are returned from KDB+ back into Perl data structures. By default a
+conversion to epoch seconds will be made. You can also get epoch seconds
+with milliseconds and you can also turn off conversion all together.
+
+   Kx::__Z2epoch(0);   # turn off epoch conversion
+   Kx::__Z2epoch(1);   # turn on epoch conversion (default)
+   Kx::__Z2epoch(2);   # turn on epoch conversion plus milliseconds
+
+These have immediate effects on how datetimes are converted into Perl
+data structures. These do not effect what is held in RAM after a call to
+KDB+ has been made, just how they are converted into Perl.
 
 These methods use the underlying functions as listed below. Don't use
 these unless you know what your doing. They are listed here for

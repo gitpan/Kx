@@ -128,6 +128,14 @@ k2phash0(x)
 		RETVAL
 
 int
+__Z2epoch(mode)
+    int mode
+
+double
+Z2epochf(datetime)
+    double datetime
+
+int
 Z2epoch(datetime)
 	double datetime
 

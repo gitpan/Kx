@@ -18,19 +18,72 @@
 
 #define myerr(s) {fprintf(stderr,s);}
 
+// 0 ==> turn off Z to epoch conversion
+// 1 ==> turn on Z to epoch conversion
+// 2 ==> turn on Z to epoch plus millisecond conversion
+static int __Z2e = 1;
+int __Z2epoch(int mode)  { __Z2e = mode; R(__Z2e);}
+
 /*
 Recall that a UNIX time is the number of seconds since
 1970.01.01T00:00:00 while a Kdb+ datetime is a 64 bit float number of
 days since 2000.01.01
+	// return 86400*(datetime+10957);
+	// return epoch/8.64e4-10957;
 */
-int Z2epoch(double datetime)
-{
-	return 86400*(datetime+10957);
-}
-
 double epoch2Z(int epoch)
 {
-	return epoch/8.64e4-10957;
+	double datetime =  epoch/8.64e4-10957;
+	// fprintf(stderr,"epoch2Z: %d -> %g\n",epoch,datetime);
+	return(datetime);
+}
+
+double Z2epochf(double datetime)
+{
+	double frac, epoch;
+
+	if(__Z2e == 0)
+		return datetime;
+	
+	// days * secs in day + secs to 1/1/2000
+	// epoch = ((int) datetime) * 86400 + 946645200;
+	epoch = ((int) datetime +10957) * 86400;
+
+	// now get hours added in
+	// fraction of datetime * seconds in day / seconds in hour
+	// gives hh.blah
+	frac = ((datetime - (int)datetime) * 86400)/3600;
+	epoch += ((int) frac) * 3600;
+
+	// minutes
+	frac = (frac - (int) frac) * 60;
+	epoch += ((int) frac) * 60;
+
+	// Seconds
+	frac = (frac - (int) frac) * 60;
+	epoch += ((int) frac);
+
+	// milli Seconds 
+	frac = (frac - (int) frac) * 1000;
+	frac = round(frac) / 1000.0;
+	epoch += frac;
+
+	return(epoch);
+}
+
+int Z2epoch(double datetime)
+{
+	//int epoch =  86400*(datetime+10957);
+	int epoch =  Z2epochf(datetime);
+	// fprintf(stderr,"Z2epoch: %g -> %d\n",datetime,epoch);
+	return(epoch);
+}
+
+int D2epoch(double datetime)
+{
+	int epoch =  86400*(datetime+10957);
+	// fprintf(stderr,"D2epoch: %g -> %d\n",datetime,epoch);
+	return(epoch);
 }
 
 unsigned char
@@ -249,8 +302,8 @@ kTableIndex (Kstruct * x, int row, int col) {
 			  CS(KC,return newSViv(kC(chdr)[row]))
 			  CS(KS,return newSVpv((const char*)kS(chdr)[row],0))
 			  CS(KM,return newSViv(kI(chdr)[row]))
-			  CS(KD,return newSViv(Z2epoch((double)kI(chdr)[row])))
-			  CS(KZ,return newSViv(Z2epoch(kF(chdr)[row])))
+			  CS(KD,return newSViv(D2epoch((double)kI(chdr)[row])))
+			  CS(KZ,return __Z2e == 1 ? newSViv(Z2epoch(kF(chdr)[row])) : newSVnv(Z2epochf(kF(chdr)[row])))
 			  CS(KU,return newSViv(kI(chdr)[row]))
 			  CS(KV,return newSViv(kI(chdr)[row]))
 			  CS(KT,return newSViv(kI(chdr)[row]))
@@ -304,8 +357,8 @@ k2pscalar (Kstruct * x) {
 		  CS(KS,return newSVpv((const char*)x->s,0))
 		  CS(128,return newSVpv((const char*)x->s,0))
 		  CS(KM,return newSViv(x->i))
-		  CS(KD,return newSViv(Z2epoch((double)x->i)))
-		  CS(KZ,return newSViv(Z2epoch(x->f)))
+		  CS(KD,return newSViv(D2epoch((double)x->i)))
+		  CS(KZ,return __Z2e == 1 ? newSViv(Z2epoch(x->f)) : newSVnv(Z2epochf(x->f)))
 		  CS(KU,return newSViv(x->i))
 		  CS(KV,return newSViv(x->i))
 		  CS(KT,return newSViv(x->i))
@@ -389,8 +442,8 @@ k2parray (Kstruct * x)
 			  CS(KC, av_push(av, newSVpv((const char*)kC(x),x->n)))
 			  CS(KS, DOAV(x->n,av,newSVpv((const char*)kS(x)[i],0)))
 			  CS(KM, DOAV(x->n,av,newSViv(kI(x)[i])))
-			  CS(KD, DOAV(x->n,av,newSViv(Z2epoch((double)kI(x)[i]))))
-			  CS(KZ, DOAV(x->n,av,newSViv(Z2epoch(kF(x)[i]))))
+			  CS(KD, DOAV(x->n,av,newSViv(D2epoch((double)kI(x)[i]))))
+			  CS(KZ, DOAV(x->n,av,__Z2e == 1 ? newSViv(Z2epoch(kF(x)[i])) : newSVnv(Z2epochf(kF(x)[i])) ))
 			  CS(KU, DOAV(x->n,av,newSViv(kI(x)[i])))
 			  CS(KV, DOAV(x->n,av,newSViv(kI(x)[i])))
 			  CS(KT, DOAV(x->n,av,newSViv(kI(x)[i])))
@@ -490,8 +543,8 @@ k2phash (Kstruct *tb)
 				  CS(KC,sv = newSViv((int)(kC(xy)[i])))
 				  CS(KS,sv = newSVpv((const char*)(kS(xy)[i]),0))
 				  CS(KM,sv = newSViv(kI(xy)[i]))
-				  CS(KD,sv = newSViv(Z2epoch((double)(kI(xy)[i]))))
-				  CS(KZ,sv = newSViv(Z2epoch(kF(xy)[i])))
+				  CS(KD,sv = newSViv(D2epoch((double)(kI(xy)[i]))))
+				  CS(KZ,sv = __Z2e == 1 ? newSViv(Z2epoch(kF(xy)[i])) : newSVnv(Z2epochf((kF(xy)[i]))))
 				  CS(KU,sv = newSViv(kI(xy)[i]))
 				  CS(KV,sv = newSViv(kI(xy)[i]))
 				  CS(KT,sv = newSViv(kI(xy)[i]))
@@ -628,8 +681,8 @@ getKarray(K list, int i)
 		  CS(KC, return(newSViv(kC(list)[i])))
 		  CS(KS, return(newSVpv((const char*)kS(list)[i],0)))
 		  CS(KM, return(newSViv(kI(list)[i])))
-		  CS(KD, return(newSViv(Z2epoch((double)kI(list)[i]))))
-		  CS(KZ, return(newSViv(Z2epoch(kF(list)[i]))))
+		  CS(KD, return(newSViv(D2epoch((double)kI(list)[i]))))
+		  CS(KZ, return(__Z2e == 1 ? newSViv(Z2epoch(kF(list)[i])) : newSVnv(Z2epochf(kF(list)[i]))))
 		  CS(KU, return(newSViv(kI(list)[i])))
 		  CS(KV, return(newSViv(kI(list)[i])))
 		  CS(KT, return(newSViv(kI(list)[i])))

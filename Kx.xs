@@ -209,3 +209,4 @@ orr(syserror)
 void
 r0(kobject)
 	Kstruct * kobject
+
